@@ -75,6 +75,45 @@ Claude 的插件通过内置插件系统管理，不存入本仓库，需在 Cla
 | `obsidian` | kepano/obsidian-skills | Obsidian 笔记操作（5 个 skill） |
 | `claude-hud` | jarrodwatts/claude-hud | context 用量 / 工具 / agent 可视化 HUD（项目级） |
 
+## Kiro 使用说明
+
+Kiro 的 skills/hooks/steering 是三套独立机制，通过本仓库的 symlink 管理，无需额外安装命令。
+
+### Skills（`kiro/skills/`）
+
+手动调用型，在 Kiro 对话中说出触发词即可启动：
+
+| Skill | 触发方式 | 说明 |
+|-------|---------|------|
+| `go-complete-review` | 「完整代码审查」「代码 review」 | 依次执行 audit.py + 测试功能 Review |
+| `test-functionality-review` | 「测试功能 review」「测试用例设计」 | 设计测试用例并评审代码 |
+
+### Hooks（`kiro/hooks/`）
+
+**自动触发**，无需手动调用，Kiro 会在特定事件时执行：
+
+| Hook | 触发时机 | 是否启用 | 说明 |
+|------|---------|---------|------|
+| `auto-change-summary` | agent 完成后（agentStop） | ✅ | 自动生成本次会话的变更报告 |
+| `go-pre-write-check` | 写入文件前（preToolUse/write） | ✅ | Go 文件写入前自检 5 项编码规范 |
+| `go-code-review` | 编辑 .go 文件时（fileEdited） | ❌ 已禁用 | 已被 go-pre-write-check 替代 |
+
+> 启用/禁用 hook：修改对应 `.kiro.hook` 文件中的 `"enabled"` 字段即可，改动会实时生效。
+
+### Steering（`kiro/steering/`）
+
+**始终生效**（`inclusion: always`），会自动注入到每次对话上下文中，相当于 Kiro 版的 always-apply 规则：
+
+| 文件 | 说明 |
+|------|------|
+| `code.md` | Go 代码编写规范 |
+| `commit-summary.md` | Commit 变更总结格式规范 |
+| `test-functionality-review.md` | Code Review 后强制执行测试功能 Review |
+
+> Steering 文件的 `inclusion` 字段可选 `always`（始终）或 `manual`（手动触发）。
+
+---
+
 ## 更新 skill
 
 直接编辑 repo 目录内的文件，因为原工具路径已是 symlink，修改即时生效，`git commit` 后推送即可同步到其他机器。
