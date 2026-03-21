@@ -13,19 +13,26 @@ alwaysApply: true
 ## 执行顺序（流水线）
 
 ```
-1. 编写 ──► 2. 编码审计 ──► 3. [模块审计] ──► 4. Code Review ──► 5. 测试评审 ──► 6. 提交总结
+0. 功能启动 ──► 1. 编写 ──► 2. 编码审计 ──► 3. [模块审计] ──► 4. Code Review ──► 5. 测试评审 ──► 6. 提交总结
 ```
 
 ## 各阶段职责
 
 | 阶段 | 职责 | 执行内容 | 对应规则 |
 |------|------|----------|----------|
+| 0. 功能启动 | PRD + 上下文固化 | 检查 PRD 存在；创建/读取 task_plan.md | `feature-start-workflow.mdc` |
 | 1. 编写 | 遵守编码规范 | 遵循 go-code-standards，输出前自查 | `go-code-standards.mdc` |
 | 2. 编码审计 | 自动检查 | 执行 `audit.py`，不通过则修复 | `go-audit` skill |
 | 3. 模块审计 | 按 Gate 审计 | 模块级任务时按 Gate 0→4 执行 | `module-review-gates.mdc` |
 | 4. Code Review | 代码评审 | 人工或 code-reviewer 子任务 | — |
 | 5. 测试评审 | 测试用例评审 | Code Review 完成后**立即**执行 | `test-functionality-review.mdc` |
 | 6. 提交总结 | 输出变更总结 | 按 commit-summary 格式输出 | `commit-summary.mdc` |
+
+## 阶段 0：功能启动（新功能必须）
+
+- 触发：用户意图为「新功能」「开发 xxx」「实现 xxx」或任务步骤 > 3
+- 执行 `feature-start-workflow.mdc` 的完整流程（PRD 检查 → task_plan.md 检查）
+- 禁止：未完成阶段 0 就进入阶段 1
 
 ## 阶段 1：编写
 
@@ -53,6 +60,23 @@ alwaysApply: true
 
 - 任务/Commit 完成后，按 `commit-summary.mdc` 格式输出
 - 禁止：总结中包含催促提交用语（如「请审计后提交」）
+
+## 任务收尾确认清单（强制输出）
+
+每次任务结束前，**必须显式输出以下清单并逐项确认**，禁止跳过或仅口头说「任务完成」：
+
+```
+## 任务收尾检查 ✅
+- [x/□] 阶段2：audit.py 已执行，结果 ___
+- [x/□] 阶段4：Code Review 已完成
+- [x/□] 阶段5：测试评审已完成
+- [x/□] 阶段6：提交总结已输出
+- [x/□] task_plan.md 当前 Phase 已标记 complete（如有）
+- [x/□] docs/api-index.md 已更新（如有新增/修改接口）
+```
+
+- 未通过的项目标 `□`，必须补充完成后才能结束任务
+- 禁止：所有项目都标 `□` 还宣称「任务完成」
 
 ## 规则优先级
 

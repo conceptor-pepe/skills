@@ -1,0 +1,74 @@
+---
+name: Feature Start Workflow / 功能启动工作流（强制）
+description: PRD先行 + 上下文固化。新功能开发前必须检查 PRD 和 task_plan.md 是否存在。Use when：新增功能、开发、实现、new feature。
+alwaysApply: true
+---
+
+# Feature Start Workflow / 功能启动工作流（强制）
+
+> 每次开始一个新功能或多步骤任务时，必须先执行以下两步检查，否则禁止写代码。
+
+## 触发条件
+
+当用户消息含有以下意图时触发：
+- 「实现 xxx」「开发 xxx」「新增 xxx」「做一个 xxx 功能」
+- 「开始 xxx」「我需要 xxx 功能」「帮我做 xxx」
+- 涉及多个文件或多个步骤的任务（>3步）
+
+## 强制执行流程（顺序不可颠倒）
+
+```
+步骤1：PRD 检查 ──► 步骤2：task_plan.md 检查 ──► 步骤3：开始实现
+```
+
+### 步骤1：PRD 先行检查
+
+**执行**：检查 `docs/prds/` 目录是否有与当前功能相关的 PRD 文件。
+
+```bash
+ls docs/prds/ 2>/dev/null || echo "no prds dir"
+```
+
+- **有对应 PRD** → 确认 PRD 已加载到上下文，继续步骤2
+- **没有对应 PRD** → **禁止直接实现**，必须先调用 `write-a-prd` skill 生成 PRD，用户确认后再继续
+- 例外：用户明确说「跳过 PRD」或「直接实现」时，记录原因并继续
+
+### 步骤2：task_plan.md 检查
+
+**执行**：检查项目根目录是否存在 `task_plan.md`。
+
+```bash
+ls task_plan.md 2>/dev/null || echo "no task_plan"
+```
+
+- **已存在** → 读取文件，检查当前 Phase 状态，与本次任务对齐后继续
+- **不存在** → 使用 `planning-with-files` skill 创建 `task_plan.md`、`findings.md`、`progress.md`
+- task_plan.md 必须包含：目标、当前 Phase、验收标准、已知风险
+
+### 步骤3：开始实现
+
+完成以上两步检查后，才可以进入代码编写阶段。后续遵循 `xiezhi-workflow.mdc`。
+
+## 禁止事项
+
+- **禁止**：未创建 task_plan.md 就开始多步骤任务
+- **禁止**：没有 PRD 就开始实现新的业务功能（单行 bugfix 除外）
+- **禁止**：task_plan.md 的 Phase 状态不更新（完成一个 Phase 立即标记 complete）
+
+## 例外情况
+
+以下情况可跳过 PRD 检查，但仍需创建 task_plan.md（若>3步）：
+- 纯 bugfix（修复已知报错）
+- 代码重构/编码规范修复
+- 数据库迁移脚本更新
+- 文档更新
+
+## 跨会话恢复
+
+每次新会话开始时，执行：
+
+```bash
+ls task_plan.md findings.md progress.md 2>/dev/null
+```
+
+如果规划文件存在，**先读取**再开始任何操作，避免重复已完成的工作。
