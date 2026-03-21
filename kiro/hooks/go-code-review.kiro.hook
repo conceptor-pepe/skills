@@ -1,0 +1,16 @@
+{
+  "enabled": false,
+  "name": "Go 代码规范检查",
+  "description": "当编辑 Go 文件时，自动检查代码规范（已禁用，改用 preToolUse 方式）",
+  "version": "3",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*.go"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "请检查当前编辑的 Go 文件是否符合代码规范。"
+  }
+}

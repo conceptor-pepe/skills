@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Go 代码写入前规范自检",
+  "description": "在写入 Go 文件前，提醒 agent 自检代码规范，避免写入后再单独开一轮检查",
+  "version": "3",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": [
+      "write"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "你即将写入一个文件。如果是 Go 文件（.go 后缀），请在写入前确认代码符合以下规范：\n- 函数长度不超过 50 行，参数不超过 5 个\n- 所有错误必须处理\n- 公开函数必须有 Go doc 注释（含 @param 和 @return）\n- if 嵌套不超过 2 层，优先早期返回\n- 资源用 defer 释放\n\n如果代码已符合规范，直接继续写入。如果发现问题，先修正再写入。如果不是 Go 文件，直接继续。"
+  }
+}

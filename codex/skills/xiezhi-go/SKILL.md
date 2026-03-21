@@ -1,0 +1,35 @@
+---
+name: xiezhi-go
+description: 使用 Cursor 的 Go 编码规范和 go-audit 审计流程处理 Go 代码任务。
+---
+
+# Xiezhi Go Workflow
+
+## Read First
+Before modifying Go code, read and follow these sources:
+- `/home/con/.cursor/rules/go-code-standards.mdc`
+- `/home/con/.cursor/skills/go-code-standards/SKILL.md`
+- `/home/con/.cursor/rules/go-audit.mdc`
+- `/home/con/.cursor/skills/go-audit/SKILL.md`
+
+## Implementation Rules
+- Use the Cursor Go coding standards as the primary style and quality baseline
+- Keep functions small, use early returns, and avoid deep nesting
+- Public functions must include Go doc comments with `@param` and `@return`
+- Handle all errors explicitly and prefer contextual wrapping
+- Use structured logging for non-high-frequency error branches
+
+## Mandatory Audit
+After modifying any `.go` files, run:
+`python3 /home/con/.cursor/skills/go-audit/scripts/audit.py <modified-go-files>`
+
+If the audit fails:
+- fix all violations
+- rerun the audit until it passes
+
+## Final Reporting
+Include the audit result in the final response, for example:
+- `编码规范审计 ✅ (9/9)`
+
+## Usage
+Use this skill for any Go code task in repositories that adopt the Xiezhi workflow.

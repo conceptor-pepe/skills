@@ -1,0 +1,19 @@
+---
+description: Code Review 完成后必须自动执行测试功能 Review
+alwaysApply: true
+---
+
+# 测试功能 Review（Code Review 后强制自动执行）
+
+**Code Review 完成后，必须自动执行**测试功能 Review，无需用户再次请求。
+
+## 执行时机
+
+- code-reviewer 子任务返回后 → 立即执行
+- 完成对代码的评审并输出结论后 → 立即执行
+- 用户请求「代码 review」且评审已结束 → 立即执行
+
+## 禁止
+
+- **禁止**等待用户说「测试功能 review」再执行
+- **禁止**询问「是否进行测试功能 review？」
