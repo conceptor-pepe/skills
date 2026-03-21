@@ -15,7 +15,20 @@ After completing all changes for a commit/task, present the summary using the st
 **Commit N: <标题>** 已完成。
 ```
 
-### 2. Changes Table
+### 2. Background（背景说明）
+
+在变更表格前，必须用 **1-3 句话**说明：
+- 本次修改解决了什么问题，**或者**
+- 实现了什么功能，**以及**
+- 为什么要做这个改动（动机/触发点）
+
+```
+<问题描述/功能说明，1-3 句话，不超过 100 字>
+```
+
+**不允许**省略此段，不允许只写"本次修改了 xxx 文件"，必须说明业务价值或问题背景。
+
+### 3. Changes Table
 
 Two columns only: **文件** and **变更说明**. Each row is one file.
 
@@ -78,6 +91,8 @@ Rules:
 ## Full Example
 
 **Commit 2: JWT Claims 扩展** 已完成。
+
+JWT 鉴权模块需要区分管理员与商户两类 Token，现有 Claims 中缺少 `token_type` 字段，导致后端无法在鉴权层直接判断 Token 类型，需要额外查库。本次在 Claims 中新增该字段并在登录入口注入，旧 Token 保持向后兼容。
 
 | 文件 | 变更说明 |
 |------|----------|
