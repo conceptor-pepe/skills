@@ -41,7 +41,7 @@ python3 ~/.cursor/skills/go-audit/scripts/audit.py --dir <directory> -v
 | 3 | 函数参数 | 参数个数不超过 5 个，超过应使用结构体封装 |
 | 4 | 嵌套深度 | if/for/switch 嵌套不超过 2 层（Gin 中间件允许 3 层） |
 | 5 | 错误处理 | `_ =` 忽略错误必须有 `//` 注释说明原因 |
-| 6 | 错误分支日志 | 非高频错误分支退出前必须记录日志（可用 `audit:allow-no-log` 豁免） |
+| 6 | 错误分支日志 | 错误分支退出前必须记录日志；**service 层禁止使用 `audit:allow-no-log`**，仅 handler/repository 层可豁免 |
 | 7 | 无反射 | 不使用 `reflect` 包，除非绝对必要 |
 | 8 | context 传递 | 涉及 DB/HTTP/RPC 的公开函数须接受 `context.Context` |
 | 9 | 接口最小化 | 接口方法数不超过 10 个 |
@@ -57,6 +57,21 @@ python3 ~/.cursor/skills/go-audit/scripts/audit.py --dir <directory> -v
 1. 完成代码修改后，对修改的文件运行审计
 2. 如有违规，**先修复**再继续
 3. 全部通过后，在 commit 总结中追加 `编码规范审计 ✅ (9/9)`
+
+## `audit:allow-no-log` 使用规范
+
+`audit:allow-no-log` 是错误分支日志检查的行内豁免标记，**必须按层级严格管控**：
+
+| 层级 | 是否允许 | 典型场景 |
+|------|----------|----------|
+| **service** | **禁止** | 所有错误分支必须有日志（Error/Warn/Info），确保问题可追溯 |
+| handler | 允许 | DTO 绑定失败、鉴权缺失等高频预期错误，由框架统一处理 |
+| repository | 允许 | 错误向上传播，由 service 层统一记录日志 |
+
+**service 层日志级别选择**：
+- `Error`：系统/基础设施故障（DB 失败、Redis 失败、加密失败）
+- `Warn`：业务拒绝或安全事件（密码错误、账号禁用、限流触发、跨域 Token）
+- `Info`：正常放行路径中的 err 分支（如 Redis key 不存在代表无限流记录）
 
 ## 智能排除
 
