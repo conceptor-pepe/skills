@@ -16,6 +16,8 @@ alwaysApply: true
 2. 函数是否超过 50 行？嵌套是否超过 2 层？
 3. 是否正确处理所有错误？是否有未注释的 `_` 忽略？
 4. 资源是否用 defer 释放？阻塞函数是否传入 context？
+5. DTO 中 int64 字段 json tag 是否含 `,string`？[]int64 是否已替换为 []types.StringID？
+6. handler 层所有异常分支是否都有日志输出？
 
 ---
 
@@ -124,12 +126,16 @@ alwaysApply: true
   - 错误包装时使用 `fmt.Errorf("context: %w", err)` 保留错误链
   - 示例：`return fmt.Errorf("查询用户失败: %w", err)` 而不是 `return err`
 
-- **Service 层错误分支日志（强制）**：
-  - **service 层**所有 `if err != nil` 分支**必须**有日志输出，无一例外
-  - 禁止在 service 层使用 `audit:allow-no-log` 豁免
-  - 日志级别选择：系统/基础设施错误用 `Error`，业务拒绝/校验失败用 `Warn`，正常放行路径用 `Info`
+- **Service / Handler 层错误分支日志（强制）**：
+  - **service 层**和 **handler 层**所有 `if err != nil` 分支**必须**有日志输出，无一例外
+  - 禁止在 service 层和 handler 层使用 `audit:allow-no-log` 豁免
+  - handler 层日志规则：
+    - 参数绑定/校验失败用 `Warn`（含 raw 输入上下文）
+    - service 调用失败用 `Error`（含 user_id / resource_id 等关键字段）
+    - `HandleError` 调用前**必须**先写 `h.Logger.Error/Warn`，确保双保险
+  - service 层日志规则同上
   - 日志必须包含足够上下文（user_id、account、操作名等），确保出问题时可追溯
-  - `audit:allow-no-log` 仅限 handler 层（高频 DTO 绑定失败）和 repository 层（错误由上层记录）使用
+  - `audit:allow-no-log` **仅限** repository 层使用（错误向上传播，由 service/handler 层记录）
 
 ## 资源管理规范
 - **及时释放资源**：
@@ -194,8 +200,8 @@ alwaysApply: true
   - 使用结构化日志（如 zap），而不是格式化字符串
   - 日志级别要合理：Debug（调试）、Info（信息）、Warn（警告）、Error（错误）
   - 错误日志必须包含足够的上下文信息（请求ID、用户ID等）
-  - **service 层**所有错误分支必须记录日志，禁止静默返回（详见"错误处理规范"）
-  - handler/repository 层的高频预期错误可使用 `audit:allow-no-log` 豁免
+  - **service 层**和 **handler 层**所有错误分支必须记录日志，禁止静默返回（详见"错误处理规范"）
+  - 仅 repository 层的错误可使用 `audit:allow-no-log` 豁免（错误由上层记录）
   - 避免在生产环境输出敏感信息（密码、token等）
   - 示例：`logger.Info("用户登录成功", zap.Int64("user_id", userID))`
 
@@ -205,6 +211,30 @@ alwaysApply: true
   - 优先使用局部变量，避免不必要的包级变量
   - 使用 `:=` 进行短变量声明，而不是 `var`
   - 示例：`if err := doSomething(); err != nil { ... }` 而不是先声明再赋值
+
+## DTO int64 精度保护规范（强制）
+- **前端 int64 精度丢失防护**：
+  - JavaScript Number 最大安全整数为 2^53，雪花 ID 等 int64 值会丢失精度
+  - **单个 int64 字段**：json tag 必须包含 `,string`（如 `json:"id,string"`）
+  - **int64 切片字段**：禁止使用 `[]int64`，改用 `[]types.StringID`（来自 `pkg/types`）
+  - **`*int64` 指针字段**：json tag 同样必须包含 `,string`
+  - **排除**：`json:"-"` 或无 json tag 的字段不受此规则约束
+  - 示例：
+    ```go
+    // ✅ 正确
+    type Response struct {
+        ID        int64            `json:"id,string"`
+        UserID    *int64           `json:"user_id,string,omitempty"`
+        ModuleIDs []types.StringID `json:"module_ids"`
+    }
+    
+    // ❌ 错误：缺少 ,string / 使用裸 []int64
+    type Response struct {
+        ID        int64   `json:"id"`           // 精度丢失！
+        ModuleIDs []int64 `json:"module_ids"`   // 精度丢失！
+    }
+    ```
+  - 审计脚本会自动检查此规则
 
 ## 性能优化规范
 - **避免不必要的分配**：
@@ -227,7 +257,8 @@ alwaysApply: true
 - [ ] 代码易于阅读和理解，没有过度复杂的语法
 - [ ] if 语句嵌套深度不超过 2 层，使用早期返回模式减少嵌套
 - [ ] 所有错误都被正确处理，没有忽略错误
-- [ ] service 层所有错误分支均有日志输出（禁止 audit:allow-no-log）
+- [ ] service 层和 handler 层所有错误分支均有日志输出（禁止 audit:allow-no-log）
+- [ ] DTO 中 int64 字段的 json tag 包含 `,string`；[]int64 已替换为 []types.StringID
 - [ ] 资源（文件、连接、锁）都使用 defer 正确释放
 - [ ] 并发访问的资源都有适当的保护（锁或 channel）
 - [ ] 函数长度不超过 50 行，复杂函数已拆分

@@ -426,6 +426,56 @@ def check_interface_size(filepath: str, lines: List[str]) -> AuditResult:
     return result
 
 
+def check_int64_json_string(filepath: str, lines: List[str]) -> AuditResult:
+    """检查带 json tag 的 int64 字段是否包含 ,string 防止前端精度丢失
+
+    规则：
+    - int64 / *int64 字段的 json tag 必须含 ,string
+    - []int64 / []*int64 字段应替换为 []types.StringID
+    - json:"-" 或无 json tag 的字段不受约束
+    """
+    result = AuditResult(name="int64精度保护", passed=True)
+
+    # 匹配 struct 字段: FieldName int64 `...json:"xxx"...`
+    single_pat = re.compile(
+        r"^\s+(\w+)\s+\*?int64\s+`[^`]*json:\"([^\"]+)\"[^`]*`"
+    )
+    slice_pat = re.compile(
+        r"^\s+(\w+)\s+\[\]\*?int64\s+`[^`]*json:\"([^\"]+)\"[^`]*`"
+    )
+
+    for i, line in enumerate(lines):
+        # []int64 先检测（更严格：应使用 []types.StringID）
+        m = slice_pat.search(line)
+        if m:
+            json_tag = m.group(2)
+            if json_tag == "-":
+                continue
+            result.passed = False
+            result.violations.append(Violation(
+                file=filepath, line=i + 1,
+                rule="int64精度保护",
+                detail=f"字段 {m.group(1)} 使用 []int64，应替换为 []types.StringID 避免前端精度丢失",
+            ))
+            continue
+
+        # 单个 int64 / *int64
+        m = single_pat.search(line)
+        if m:
+            json_tag = m.group(2)
+            if json_tag == "-":
+                continue
+            if ",string" not in json_tag:
+                result.passed = False
+                result.violations.append(Violation(
+                    file=filepath, line=i + 1,
+                    rule="int64精度保护",
+                    detail=f"字段 {m.group(1)} 的 json tag 缺少 ,string（防止前端 int64 精度丢失）",
+                ))
+
+    return result
+
+
 # ────────────────────────────────────────────────
 # 主流程
 # ────────────────────────────────────────────────
@@ -440,6 +490,7 @@ ALL_CHECKS = [
     check_reflect_usage,
     check_context_in_blocking,
     check_interface_size,
+    check_int64_json_string,
 ]
 
 
