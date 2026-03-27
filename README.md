@@ -91,6 +91,9 @@ Cursor 工具类 skill，用于管理 Cursor 自身的配置：
 | 文档（非 .mdc） | 说明 |
 |----------------|------|
 | `cursor/references/task-design-brief.md` | 阶段 0.5 **唯一**输出模板；由 Agent `Read` 打开 |
+| `cursor/references/repo-workflow-index.md` | **下游** `docs/dev/workflow.md` 推荐正文（獬豸索引、`alwaysApply` 列表） |
+| `cursor/references/agents-md-pattern-go.md` | **下游**根目录 `AGENTS.md`：指针化约定，避免与 `go-code-standards.mdc` 双写 |
+| `cursor/references/claude-md-hints-for-go-repos.md` | **下游** `CLAUDE.md`：獬豸一句 + 文档同步清单结构 |
 
 > 已移除重复规则 **`feature-start-workflow.mdc`**、**`task-design-brief.mdc`**（内容已并入獬豸与上表引用文件）。请删除本机旧 symlink 后执行 `bash setup.sh`。弃用的 **`macrode-workflow.mdc`** 同上。
 
