@@ -32,7 +32,7 @@ python3 ~/.cursor/skills/go-audit/scripts/audit.py --dir <directory>
 python3 ~/.cursor/skills/go-audit/scripts/audit.py --dir <directory> -v
 ```
 
-## 检查项（9 项）
+## 检查项（11 项）
 
 | # | 检查项 | 规则 |
 |---|--------|------|
@@ -45,18 +45,20 @@ python3 ~/.cursor/skills/go-audit/scripts/audit.py --dir <directory> -v
 | 7 | 无反射 | 不使用 `reflect` 包，除非绝对必要 |
 | 8 | context 传递 | 涉及 DB/HTTP/RPC 的公开函数须接受 `context.Context` |
 | 9 | 接口最小化 | 接口方法数不超过 10 个 |
+| 10 | int64 精度保护 | int64 字段 json tag 必须含 `,string`；`[]int64` 必须替换为 `[]types.StringID` |
+| 11 | 写操作成功日志 | service/handler 关键写操作在成功出口必须有 `Info` 日志（支持 `audit:allow-no-success-log` 豁免高频幂等场景） |
 
 ## 输出格式
 
-- **全部通过**: `编码规范审计 ✅ (9/9)`
-- **有违规**: `编码规范审计 ❌ (N/8)` + 逐条违规明细（文件:行号 [规则] 描述）
+- **全部通过**: `编码规范审计 ✅ (11/11)`
+- **有违规**: `编码规范审计 ❌ (N/11)` + 逐条违规明细（文件:行号 [规则] 描述）
 - **退出码**: 0 = 全部通过，1 = 有违规
 
 ## 工作流集成
 
 1. 完成代码修改后，对修改的文件运行审计
 2. 如有违规，**先修复**再继续
-3. 全部通过后，在 commit 总结中追加 `编码规范审计 ✅ (9/9)`
+3. 全部通过后，在 commit 总结中追加 `编码规范审计 ✅ (11/11)`
 
 ## `audit:allow-no-log` 使用规范
 
@@ -72,6 +74,16 @@ python3 ~/.cursor/skills/go-audit/scripts/audit.py --dir <directory> -v
 - `Error`：系统/基础设施故障（DB 失败、Redis 失败、加密失败）
 - `Warn`：业务拒绝或安全事件（密码错误、账号禁用、限流触发、跨域 Token）
 - `Info`：正常放行路径中的 err 分支（如 Redis key 不存在代表无限流记录）
+
+## `audit:allow-no-success-log` 使用规范
+
+`audit:allow-no-success-log` 是关键写操作成功日志检查的豁免标记，仅用于明确高频或幂等场景（如批量重试、补偿任务）。
+
+| 层级 | 是否允许 | 说明 |
+|------|----------|------|
+| service | 允许（受限） | 必须在函数体内写明豁免原因注释，禁止默认滥用 |
+| handler | 允许（受限） | 仅用于网关级高频入口，需保证链路其他层可追踪 |
+| repository | 不适用 | 成功日志规则仅检查 service/handler |
 
 ## 智能排除
 

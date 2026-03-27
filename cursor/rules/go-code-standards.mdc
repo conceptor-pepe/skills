@@ -7,6 +7,7 @@ alwaysApply: true
 
 # Go 代码编写规范（强制）
 
+> **在流水线中的位置**：**阶段 1**，见 **`xiezhi-workflow.mdc`**。  
 > **强制执行**：编写或修改任何 Go 代码（函数、文件）前，必须先遵守本规范。每次输出代码后，必须对照下方检查清单自查。禁止违反或跳过。
 
 ## 强制检查流程
@@ -18,6 +19,7 @@ alwaysApply: true
 4. 资源是否用 defer 释放？阻塞函数是否传入 context？
 5. DTO 中 int64 字段 json tag 是否含 `,string`？[]int64 是否已替换为 []types.StringID？
 6. handler 层所有异常分支是否都有日志输出？
+7. service/handler 关键写操作是否在成功出口记录 Info 日志？
 
 ---
 
@@ -201,6 +203,9 @@ alwaysApply: true
   - 日志级别要合理：Debug（调试）、Info（信息）、Warn（警告）、Error（错误）
   - 错误日志必须包含足够的上下文信息（请求ID、用户ID等）
   - **service 层**和 **handler 层**所有错误分支必须记录日志，禁止静默返回（详见"错误处理规范"）
+  - **service 层**和 **handler 层**关键写操作（新增/修改/删除/状态变更/权限变更/积分变更）在成功返回前必须记录 `Info` 日志
+  - 成功日志必须包含最小追踪字段：`op`、`operator_id`（如有）、`target_id`（或 `user_id/team_id`）、`result=success`
+  - 纯查询读接口（Get/List/Query）默认不强制成功日志，避免日志噪音
   - 仅 repository 层的错误可使用 `audit:allow-no-log` 豁免（错误由上层记录）
   - 避免在生产环境输出敏感信息（密码、token等）
   - 示例：`logger.Info("用户登录成功", zap.Int64("user_id", userID))`
@@ -258,6 +263,7 @@ alwaysApply: true
 - [ ] if 语句嵌套深度不超过 2 层，使用早期返回模式减少嵌套
 - [ ] 所有错误都被正确处理，没有忽略错误
 - [ ] service 层和 handler 层所有错误分支均有日志输出（禁止 audit:allow-no-log）
+- [ ] service 层和 handler 层关键写操作在成功出口有 Info 日志（允许 `audit:allow-no-success-log` 仅用于明确高频/幂等豁免）
 - [ ] DTO 中 int64 字段的 json tag 包含 `,string`；[]int64 已替换为 []types.StringID
 - [ ] 资源（文件、连接、锁）都使用 defer 正确释放
 - [ ] 并发访问的资源都有适当的保护（锁或 channel）

@@ -5,12 +5,14 @@ alwaysApply: true
 
 # Module Review Gates
 
+> **在流水线中的位置**：**阶段 3**（适用时），见 **`xiezhi-workflow.mdc`**。
+
 对每个后端模块执行审计时，必须按以下 Gate 顺序推进，前一 Gate 未通过不得进入下一 Gate。
 
 ## Gate 0：编码规范检查（强制）
 
 - 对目标目录执行：`python3 ~/.cursor/skills/go-audit/scripts/audit.py --dir <module_dir>`
-- 必须达到：`编码规范审计 ✅ (9/9)`
+- 必须达到：`编码规范审计 ✅ (11/11)`
 - 若失败，先修复后复审，直到通过
 - 每个模块都要输出审计结论（通过/失败项）
 

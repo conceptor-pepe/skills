@@ -64,6 +64,14 @@ def is_func_start(line: str) -> bool:
     return line.strip().startswith("func ")
 
 
+def parse_func_name(signature: str) -> str:
+    """从函数签名中提取函数名（支持方法与普通函数）"""
+    match = re.search(r"func\s+(?:\([^)]+\)\s+)?(\w+)\s*\(", signature)
+    if not match:
+        return ""
+    return match.group(1)
+
+
 def count_params(sig: str) -> int:
     """统计函数签名中的参数个数"""
     start = sig.find("(")
@@ -476,6 +484,87 @@ def check_int64_json_string(filepath: str, lines: List[str]) -> AuditResult:
     return result
 
 
+def check_write_success_logging(filepath: str, lines: List[str]) -> AuditResult:
+    """检查 service/handler 关键写操作在成功出口前是否有 Info 日志"""
+    result = AuditResult(name="写操作成功日志", passed=True)
+
+    normalized_path = filepath.replace("\\", "/")
+    if "/service/" not in normalized_path and "/handler/" not in normalized_path:
+        return result
+
+    write_name_pattern = re.compile(
+        r"^(Create|Update|Delete|Add|Remove|Invite|Kick|Bind|Unbind|Grant|Revoke|"
+        r"Freeze|Unfreeze|Consume|Purchase|Renew|Cancel|Transfer|Assign|Set|Change|"
+        r"Reset|Enable|Disable|Dissolve|Approve|Reject|Open|Close|Subscribe|Unsubscribe)"
+    )
+    read_name_pattern = re.compile(
+        r"^(Get|List|Find|Query|Load|Fetch|Count|Exists|Check|Resolve|Calculate|Build|Parse|Map|Convert)"
+    )
+    write_call_keywords = [
+        ".Create(", ".Save(", ".Delete(", ".Exec(", ".Update(", ".Updates(", ".UpdateColumn(",
+        ".UpdateColumns(", ".Insert(", ".Upsert(", ".Remove(", ".Add(", ".Append(", ".Replace(",
+        ".StartTx(", ".Commit(", ".Rollback(",
+    ]
+    info_log_pattern = re.compile(r"\b\w+\.Info\(")
+    skip_marker = "audit:allow-no-success-log"
+
+    in_func = False
+    func_start = 0
+    func_name = ""
+    brace_depth = 0
+    has_open_brace = False
+    block_lines: List[str] = []
+    func_is_public = False
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if is_func_start(line) and not in_func:
+            in_func = True
+            func_start = i
+            brace_depth = stripped.count("{") - stripped.count("}")
+            has_open_brace = "{" in stripped
+            func_name = parse_func_name(stripped)
+            func_is_public = is_public_func(stripped)
+            block_lines = [stripped]
+            continue
+
+        if not in_func:
+            continue
+
+        block_lines.append(stripped)
+        if "{" in stripped:
+            has_open_brace = True
+        brace_depth += stripped.count("{") - stripped.count("}")
+        if not has_open_brace or brace_depth > 0:
+            continue
+        if i <= func_start:
+            continue
+
+        has_skip = any(skip_marker in content for content in block_lines)
+        if has_skip:
+            in_func = False
+            continue
+
+        has_info_log = any(info_log_pattern.search(content) for content in block_lines)
+        has_write_call = any(any(keyword in content for keyword in write_call_keywords) for content in block_lines)
+        name_is_write = bool(write_name_pattern.match(func_name))
+        name_is_read = bool(read_name_pattern.match(func_name))
+
+        need_success_log = func_is_public and (name_is_write or has_write_call) and not (name_is_read and not has_write_call)
+        if need_success_log and not has_info_log:
+            result.passed = False
+            result.violations.append(Violation(
+                file=filepath,
+                line=func_start + 1,
+                rule="写操作成功日志",
+                detail=f"函数 {func_name or '(unknown)'} 疑似关键写操作，成功出口前缺少 Info 日志（可在高频幂等场景使用 audit:allow-no-success-log）",
+            ))
+
+        in_func = False
+
+    return result
+
+
 # ────────────────────────────────────────────────
 # 主流程
 # ────────────────────────────────────────────────
@@ -491,6 +580,7 @@ ALL_CHECKS = [
     check_context_in_blocking,
     check_interface_size,
     check_int64_json_string,
+    check_write_success_logging,
 ]
 
 

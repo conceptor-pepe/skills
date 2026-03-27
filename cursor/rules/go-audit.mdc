@@ -6,6 +6,8 @@ alwaysApply: true
 
 # Go 编码规范自动审计（全局强制）
 
+> **在流水线中的位置**：**阶段 2**，见 **`xiezhi-workflow.mdc`**。
+
 ## 触发条件
 
 当新增或修改任何 `.go` 文件后，**必须自动执行**审计脚本，**无需等待用户要求**。
@@ -25,7 +27,7 @@ python3 ~/.cursor/skills/go-audit/scripts/audit.py --dir <directory>
 
 1. 完成所有 `.go` 文件的编写/修改
 2. 收集本次涉及的文件路径，执行审计脚本
-3. **退出码 0**（通过）→ 在总结中追加审计结论（如 `编码规范审计 ✅ (9/9)`）
+3. **退出码 0**（通过）→ 在总结中追加审计结论（如 `编码规范审计 ✅ (11/11)`）
 4. **退出码 1**（违规）→ **必须先修复代码**，重新执行脚本，循环直到通过
 5. 审计过程静默执行，只在最终总结中展示一行结论
 
@@ -37,7 +39,7 @@ python3 ~/.cursor/skills/go-audit/scripts/audit.py --dir <directory>
 | **handler** | **禁止** | 所有异常分支必须有日志，避免运维盲区 |
 | repository | 允许 | 错误向上传播，由 service/handler 层记录 |
 
-## 审计检查项（共 10 项）
+## 审计检查项（共 11 项）
 
 | # | 检查项 | 说明 |
 |---|--------|------|
@@ -51,6 +53,7 @@ python3 ~/.cursor/skills/go-audit/scripts/audit.py --dir <directory>
 | 8 | context传递 | 阻塞操作必须传递 context |
 | 9 | 接口最小化 | 接口方法数不超过 10 个 |
 | 10 | int64精度保护 | int64 字段 json tag 必须含 `,string`；[]int64 须用 []types.StringID |
+| 11 | 写操作成功日志 | service/handler 的关键写操作在成功出口必须有 Info 日志（可用 `audit:allow-no-success-log` 标记豁免高频幂等场景） |
 
 ## 禁止事项
 

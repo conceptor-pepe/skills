@@ -1,12 +1,15 @@
 ---
 name: xiezhi-go
-description: 使用 Cursor 的 Go 编码规范和 go-audit 审计流程处理 Go 代码任务。
+description: 使用 Cursor 的獬豸（Xiezhi）工作流、Go 编码规范和 go-audit 审计处理 Go 代码任务。
 ---
 
-# Xiezhi Go Workflow
+# Xiezhi Go Workflow（獬豸）
 
 ## Read First
 Before modifying Go code, read and follow these sources:
+- `/home/con/.cursor/rules/xiezhi-workflow.mdc`（端到端顺序）
+- `/home/con/.cursor/rules/task-design-brief-gate.mdc`（阶段 0.5 必须执行/豁免条件）
+- `skills` 仓库 `cursor/references/task-design-brief.md`（0.5 四步模板，须 Read）
 - `/home/con/.cursor/rules/go-code-standards.mdc`
 - `/home/con/.cursor/skills/go-code-standards/SKILL.md`
 - `/home/con/.cursor/rules/go-audit.mdc`
@@ -29,7 +32,7 @@ If the audit fails:
 
 ## Final Reporting
 Include the audit result in the final response, for example:
-- `编码规范审计 ✅ (9/9)`
+- `编码规范审计 ✅ (11/11)`
 
 ## Usage
-Use this skill for any Go code task in repositories that adopt the Xiezhi workflow.
+Use this skill for any Go code task in repositories that adopt the **Xiezhi / 獬豸** workflow (`xiezhi-workflow.mdc`).

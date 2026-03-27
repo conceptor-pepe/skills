@@ -74,16 +74,25 @@ Cursor 工具类 skill，用于管理 Cursor 自身的配置：
 
 ### Rules（`cursor/rules/`）
 
-全部为 `alwaysApply: true`，每次对话自动注入，无需手动触发：
+通过 `setup.sh` 将 `cursor/rules/*.mdc` 同步到 `~/.cursor/rules/`。**端到端 Go 流程**仅 **`xiezhi-workflow.mdc`（獬豸）** 定义顺序；其中 **`alwaysApply: true`** 的规则会在 Cursor 中**自动注入**（见该文件「自动触发」节）。  
+**阶段 0.5 四步模板**为单独 Markdown（不注入、不重复）：`cursor/references/task-design-brief.md`。
 
-| 规则 | 说明 |
-|------|------|
-| `go-code-standards.mdc` | Go 代码编写规范（强制，编写前必须遵守） |
-| `go-audit.mdc` | 修改 `.go` 文件后自动执行 `audit.py` 审计 |
-| `xiezhi-workflow.mdc` | 獬豸工作流：编写 → 审计 → Review → 测试评审 → 提交总结 |
-| `test-functionality-review.mdc` | Code Review 完成后必须立即执行测试功能 Review |
-| `commit-summary.mdc` | 每次 commit 完成后按统一格式输出变更总结 |
-| `module-review-gates.mdc` | 模块级审计按 Gate 0→4 顺序执行 |
+| 规则 | alwaysApply | 说明 |
+|------|-------------|------|
+| `xiezhi-workflow.mdc` | ✅ | **獬豸总流水线** + 阶段 0 完整检查；自动触发列表见文内 |
+| `go-code-standards.mdc` | ✅ | Go 编写规范 |
+| `go-audit.mdc` | ✅ | 改 `.go` 后 `audit.py` |
+| `test-functionality-review.mdc` | ✅ | CR 后测试评审 |
+| `commit-summary.mdc` | ✅ | 提交总结格式 |
+| `module-review-gates.mdc` | ✅ | 模块审计 Gate 0→4 |
+| `feature-planning-files.mdc` | ✅ | `docs/features/<name>/` 目录约定 |
+| `task-design-brief-gate.mdc` | ✅ | **阶段 0.5 核心门禁**（触发 / 硬顺序 / 豁免 / 禁止；与獬豸同权） |
+
+| 文档（非 .mdc） | 说明 |
+|----------------|------|
+| `cursor/references/task-design-brief.md` | 阶段 0.5 **唯一**输出模板；由 Agent `Read` 打开 |
+
+> 已移除重复规则 **`feature-start-workflow.mdc`**、**`task-design-brief.mdc`**（内容已并入獬豸与上表引用文件）。请删除本机旧 symlink 后执行 `bash setup.sh`。弃用的 **`macrode-workflow.mdc`** 同上。
 
 ---
 
@@ -182,7 +191,7 @@ Claude 的大部分 skill 通过插件机制安装，新机器需在 Claude Code
 
 | Skill | 触发词 | 说明 |
 |-------|-------|------|
-| `xiezhi-go` | Go 代码任务时自动使用 | 在 Codex 中使用 Cursor 的 Go 编码规范 + go-audit 审计流程 |
+| `xiezhi-go` | Go 代码任务时自动使用 | Codex：遵循 `xiezhi-workflow.mdc` + Go 规范 + go-audit |
 
 > Codex 的 `.system/` 目录（skill-installer、skill-creator、openai-docs）为系统内置 skill，不纳入本仓库。
 

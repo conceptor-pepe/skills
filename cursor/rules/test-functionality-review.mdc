@@ -5,6 +5,8 @@ alwaysApply: true
 
 # 测试功能 Review（Code Review 后强制自动执行）
 
+> **在流水线中的位置**：**阶段 5**；顺序见 **`xiezhi-workflow.mdc`**。
+
 **Code Review 完成后，必须自动执行**测试功能 Review，无需用户再次请求。
 
 ## ⚠️ 门禁地位
