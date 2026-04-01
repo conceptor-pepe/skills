@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "name": "Go 代码审计（写入后自动执行）",
+  "description": "完成 Go 文件写入后，提醒 agent 运行 audit.py 检查代码规范",
+  "version": "1.0.0",
+  "when": {
+    "type": "postToolUse",
+    "toolTypes": ["write"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "你刚刚写入了一个文件。如果是 Go 文件（.go 后缀），请运行 `python3 ~/.kiro/skills/go-audit/scripts/audit.py <刚写入的文件路径>` 检查代码规范。如果不是 Go 文件，忽略此提醒。"
+  }
+}

@@ -1,10 +1,21 @@
 ---
 inclusion: always
+globs: "**/*.go"
 ---
 
-# Go 代码编写规范
+# Go 代码编写规范（强制）
 
-在编写 Go 代码时，必须严格遵循以下规范：
+> **强制执行**：编写或修改任何 Go 代码（函数、文件）前，必须先遵守本规范。每次输出代码后，必须对照下方检查清单自查。禁止违反或跳过。
+
+## 强制检查流程
+
+每次完成函数或文件编写后，必须逐项核对：
+1. 公开函数是否有 Go doc 注释（含 @param、@return）？
+2. 函数是否超过 50 行？嵌套是否超过 2 层？
+3. 是否正确处理所有错误？是否有未注释的 `_` 忽略？
+4. 资源是否用 defer 释放？阻塞函数是否传入 context？
+
+---
 
 ## 文件职责原则
 - **单一职责原则**：每个文件专注于单一概念
@@ -49,37 +60,6 @@ inclusion: always
   - 函数体内每个逻辑步骤必须添加行内注释，说明该步骤的目的
   - 注释写在代码块上方，而不是行尾
   - 每个独立的逻辑阶段用注释分隔，便于快速定位代码意图
-  - 示例：
-    ```go
-    func (h *UserHandler) ListUsers(c *gin.Context) {
-        // 解析并校验请求参数
-        var req ListUsersRequest
-        if err := c.ShouldBindQuery(&req); err != nil {
-            response.BadRequest(c, "参数错误")
-            return
-        }
-
-        // 构建查询条件，仅在传入时过滤
-        var nameFilter *string
-        if req.Name != "" {
-            nameFilter = &req.Name
-        }
-
-        // 调用 service 查询用户列表
-        users, total, err := h.userService.ListUsers(c.Request.Context(), &userService.ListUsersParams{
-            Page:     req.Page,
-            PageSize: req.PageSize,
-            Name:     nameFilter,
-        })
-        if err != nil {
-            response.InternalError(c, "查询失败")
-            return
-        }
-
-        // 返回分页结果
-        response.OK(c, gin.H{"list": users, "total": total})
-    }
-    ```
   - 对于简单的赋值或明显的操作，不需要注释，避免噪音
   - 注释粒度以"逻辑步骤"为单位，而非每一行
 
@@ -109,6 +89,7 @@ inclusion: always
   - 错误信息应该清晰、可操作
   - 不要忽略错误，使用 `_` 忽略时必须注释原因
   - 错误包装时使用 `fmt.Errorf("context: %w", err)` 保留错误链
+  - 对于非高频、非持续触发的错误分支，必须记录错误日志，便于后续问题定位
   - 示例：`return fmt.Errorf("查询用户失败: %w", err)` 而不是 `return err`
 
 ## 资源管理规范
@@ -137,22 +118,6 @@ inclusion: always
   - 函数参数个数建议不超过 5 个
   - 超过 5 个参数时，应该考虑使用结构体封装参数
   - 使用参数结构体可以提高可读性和可维护性，也便于后续扩展
-  - 示例：
-    ```go
-    // 不推荐：参数过多
-    func CreateUser(ctx context.Context, name string, email string, age int, phone string, address string) error
-    
-    // 推荐：使用结构体封装
-    type CreateUserRequest struct {
-        Name    string
-        Email   string
-        Age     int
-        Phone   string
-        Address string
-    }
-    func CreateUser(ctx context.Context, req *CreateUserRequest) error
-    ```
-  - 特殊情况（如配置对象、选项模式）可以适当放宽，但应优先考虑结构体封装
 
 ## 并发安全规范
 - **资源竞争保护**：
@@ -167,15 +132,14 @@ inclusion: always
   - 接口应该小而专注，只包含必要的方法
   - 接口定义在消费方，而不是实现方
   - 避免过度抽象，只在真正需要多实现时定义接口
-  - 示例：`type Reader interface { Read([]byte) (int, error) }` 而不是包含10个方法的大接口
 
 ## 日志规范
 - **结构化日志**：
   - 使用结构化日志（如 zap），而不是格式化字符串
   - 日志级别要合理：Debug（调试）、Info（信息）、Warn（警告）、Error（错误）
   - 错误日志必须包含足够的上下文信息（请求ID、用户ID等）
+  - 错误分支若不会持续高频打印，禁止静默返回，至少记录一条结构化错误日志
   - 避免在生产环境输出敏感信息（密码、token等）
-  - 示例：`logger.Info("用户登录成功", zap.Int64("user_id", userID))`
 
 ## 变量作用域规范
 - **最小作用域原则**：
@@ -191,23 +155,3 @@ inclusion: always
   - 使用 `strings.Builder` 进行字符串拼接
   - 避免不必要的类型转换和接口转换
   - 只有在真正需要时才进行性能优化，优先保证代码可读性
-
-## 代码审查检查清单
-在提交代码前，确保：
-- [ ] 每个文件只包含一个主要概念
-- [ ] 每个函数只做一件事
-- [ ] 所有命名都是自解释的
-- [ ] 注释说明了"为什么"而非"是什么"
-- [ ] 所有公开函数都有函数注释，包含参数和返回值说明
-- [ ] 函数参数个数不超过 5 个，超过时使用结构体封装
-- [ ] 没有重复实现标准库已有的功能
-- [ ] 代码易于阅读和理解，没有过度复杂的语法
-- [ ] if 语句嵌套深度不超过 2 层，使用早期返回模式减少嵌套
-- [ ] 所有错误都被正确处理，没有忽略错误
-- [ ] 资源（文件、连接、锁）都使用 defer 正确释放
-- [ ] 并发访问的资源都有适当的保护（锁或 channel）
-- [ ] 函数长度不超过 50 行，复杂函数已拆分
-- [ ] 使用了 context.Context 管理超时和取消
-- [ ] 日志包含足够的上下文信息
-- [ ] 接口设计遵循最小化原则
-- [ ] 变量作用域最小化，优先使用局部变量

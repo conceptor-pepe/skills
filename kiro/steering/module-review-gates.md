@@ -1,0 +1,37 @@
+---
+inclusion: always
+---
+
+# Module Review Gates
+
+对每个后端模块执行审计时，必须按以下 Gate 顺序推进，前一 Gate 未通过不得进入下一 Gate。
+
+## Gate 0：编码规范检查（强制）
+
+- 对目标目录执行：`python3 ~/.kiro/skills/go-audit/scripts/audit.py --dir <module_dir>`
+- 必须达到：`编码规范审计 ✅ (9/9)`
+- 若失败，先修复后复审，直到通过
+- 每个模块都要输出审计结论（通过/失败项）
+
+## Gate 1：DTO 与前端契约
+
+- 前后端交互的 `int64` 字段按约定绑定 `json:",string"`，避免精度丢失
+- `binding` 标签与请求来源一致（json/form/uri）
+- 字段名、`omitempty`、默认值语义保持兼容
+
+## Gate 2：调用链正确性
+
+- 核对 `handler -> service -> repository -> wire` 参数与签名
+- 保持错误映射和日志/审计行为一致
+- 确认分页、筛选、排序行为无回归
+
+## Gate 3：脚本与数据安全（如涉及）
+
+- migration/seed/backfill 具备幂等或可重入策略
+- 明确执行顺序与环境边界
+
+## Gate 4：测试与回归
+
+- 补齐关键分支测试
+- 执行最小回归链路并记录结果
+- 标注剩余风险与后续补测点

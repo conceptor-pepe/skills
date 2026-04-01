@@ -1,13 +1,13 @@
 {
   "enabled": true,
   "name": "自动变更总结",
-  "description": "当 agent 完成代码编写后，自动生成变更报告（全局通用）",
-  "version": "2",
+  "description": "当 agent 完成代码编写后，强制执行三步收尾：commit-summary + test-review + 变更报告",
+  "version": "3",
   "when": {
     "type": "agentStop"
   },
   "then": {
     "type": "askAgent",
-    "prompt": "请总结本次会话中所有的代码变更，生成简洁的变更报告，包含：\n- 修改了哪些文件\n- 每个文件的主要变更内容\n- 变更的目的\n\n如果本次会话没有任何文件修改（只是回答问题或讨论），则回复\"本次无代码变更\"即可。"
+    "prompt": "本次 agent 执行结束，请强制按顺序执行以下三步，不得跳过：\n\n## Step 1: 判断是否有代码变更\n如果本次会话没有任何文件修改（只是回答问题或讨论），直接回复「本次无代码变更」，结束。\n\n## Step 2: Commit 变更总结（有变更时必须执行）\n按 commit-summary.md 规范输出变更表格，格式：\n- 标题行：**Commit N: <标题>** 已完成。\n- 变更表格（层级 | 文件 | 变更说明 | 变更类型）\n- 关键设计点\n- 验证结果\n- 提交信息（conventional commit 格式）\n\n## Step 3: 测试功能 Review（有变更时必须执行）\n按 test-functionality-review.md 规范执行三步：\n1. 设计测试用例表（正常流 + 边界 + 异常 + 集成）\n2. 逐条对照用例评审代码实现\n3. 输出结论（需修复 Critical / 可选优化 Suggestion）\n\n以上三步必须全部完成，不得以「已在前面总结」为由跳过。"
   }
 }

@@ -1,0 +1,75 @@
+---
+inclusion: always
+---
+
+# Feature Start Workflow / 功能启动工作流（强制）
+
+> 每次开始一个新功能或多步骤任务时，必须先执行以下检查，否则禁止写代码。
+
+## 触发条件
+
+当用户消息含有以下意图时触发：
+- 「实现 xxx」「开发 xxx」「新增 xxx」「做一个 xxx 功能」
+- 「开始 xxx」「我需要 xxx 功能」「帮我做 xxx」
+- 涉及多个文件或多个步骤的任务（>3步）
+
+## 强制执行流程（顺序不可颠倒）
+
+```
+步骤1：PRD 检查 ──► 步骤2：规划文件检查 ──► 步骤3：开始实现
+```
+
+### 步骤1：PRD 先行检查
+
+检查 `docs/features/` 目录是否有与当前功能相关的 PRD 文件：
+
+```bash
+ls docs/features/*/prd.md 2>/dev/null || echo "no feature prd found"
+```
+
+- **有对应 PRD** → 确认 PRD 已加载到上下文，继续步骤2
+- **没有对应 PRD** → **禁止直接实现**，必须先用 `write-a-prd` 流程生成 PRD，用户确认后再继续
+- 例外：用户明确说「跳过 PRD」或「直接实现」时，记录原因并继续
+
+### 步骤2：规划文件检查
+
+确定特性名称（kebab-case），检查 `docs/features/<feature-name>/` 是否存在规划文件：
+
+```bash
+ls docs/features/<feature-name>/task_plan.md 2>/dev/null || echo "no task_plan"
+```
+
+- **已存在** → 读取文件，检查当前 Phase 状态，与本次任务对齐后继续
+- **不存在** → 创建 `docs/features/<feature-name>/` 目录，在其中创建 `prd.md`、`task_plan.md`、`findings.md`、`progress.md`
+  - task_plan.md 必须包含：目标、当前 Phase、验收标准、已知风险
+
+**⚠️ 禁止将规划文件放在项目根目录。** 必须放在 `docs/features/<feature-name>/` 下。
+
+### 步骤3：开始实现
+
+完成以上两步检查后，才可以进入代码编写阶段。后续遵循 `xiezhi-workflow.md`。
+
+## 禁止事项
+
+- **禁止**：未创建 task_plan.md 就开始多步骤任务
+- **禁止**：没有 PRD 就开始实现新的业务功能（单行 bugfix 除外）
+- **禁止**：task_plan.md 的 Phase 状态不更新（完成一个 Phase 立即标记 complete）
+- **禁止**：特性文档散落在项目根目录或其他非 `docs/features/<feature-name>/` 位置
+
+## 例外情况
+
+以下情况可跳过 PRD 检查，但仍需创建 task_plan.md（若>3步）：
+- 纯 bugfix（修复已知报错）
+- 代码重构/编码规范修复
+- 数据库迁移脚本更新
+- 文档更新
+
+## 跨会话恢复
+
+每次新会话开始时，执行：
+
+```bash
+find docs/features/ -name "task_plan.md" 2>/dev/null
+```
+
+如果规划文件存在，**先读取最近修改的特性目录**再开始任何操作，避免重复已完成的工作。
