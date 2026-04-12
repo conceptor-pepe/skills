@@ -1,0 +1,32 @@
+---
+description: 对话与 commit-summary 中 Markdown 文件链接必须相对「当前 Cursor 工作区根」，避免路径多一层导致无法跳转
+alwaysApply: true
+---
+
+# Markdown 文件链接 — 相对当前工作区根（全局）
+
+## 问题
+
+同一套仓库，**打开文件夹不同** 时，Cursor 解析 `[text](path)` 的基准目录不同。若照抄「聚合仓库」或「单仓」习惯写死前缀（例如多写一层 `new-api/`），会出现 **链接点不开 / 跳转到错误路径**。
+
+## 真源（每轮对话必须执行）
+
+1. 读取本轮对话 **user_info** 中的 **`Workspace Path`**（或用户说明的「当前打开的根目录」）。
+2. 输出变更表、`file://`、代码引用路径、可复制相对路径时：`path` **一律为从该 Workspace Path 起算的相对路径**，不得假定根目录是父级 monorepo 或子目录。
+3. **自检**：想象拼接 `Workspace Path + "/" + path` 应对上目标文件在磁盘上的真实位置；若会多出一级 `new-api/`、`skild-art-backend/` 等，则前缀错误。
+
+## 判定表（示例）
+
+| Workspace Path（工作区根） | 文件实际所在 | 链接里应写的 path（片段） |
+|---------------------------|--------------|---------------------------|
+| `.../brain-xai`（根下可见多仓） | new-api 里的 Go 文件 | `new-api/relay/...` |
+| `.../brain-xai/new-api`（根下直接有 `relay/`） | 同上 | `relay/...`（**不要**再写 `new-api/`） |
+| `.../skild-art-backend` | 该仓内文件 | `internal/...`（**不要**写 `skild-art-backend/`） |
+
+## 与项目级规则的关系
+
+若某仓库下的 `.cursor/rules` 仍写有「必须带某前缀」的示例：**仍以本轮 Workspace Path 为准**；项目规则中与本文件冲突的硬编码路径，视为 **在「该规则假定的根」下成立**，输出前按上表换算为当前根的相对路径。
+
+## 与阶段 6 / commit-summary
+
+`commit-summary.mdc` 变更表中的「文件」列链接，**同样遵守本节**，否则提交总结里的链接无法在用户当前窗口中点击跳转。

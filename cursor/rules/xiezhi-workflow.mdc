@@ -1,172 +1,95 @@
 ---
 name: Xiezhi Workflow / 獬豸工作流（强制）
-description: 獬豸（Xiezhi）端到端 Go 开发流水线：唯一流程真源；alwaysApply 自动注入。功能启动 → 方案简报 → 编码 → audit → 模块审计 → CR → 测试评审 → 提交总结。
+description: Xiezhi (獬豸), mythical beast that distinguishes right from wrong. Go dev workflow: coding standards → audit → module gates → code review → test review → commit summary. Use when: xiezhi workflow, 獬豸工作流, go dev workflow.
 alwaysApply: true
 ---
 
 # Xiezhi Workflow / 獬豸工作流（强制）
 
-> Xiezhi（獬豸），神话中辨曲直、触不直者；本工作流取其**把关**之义。  
-> **唯一流程真源**：顺序与门禁**仅以本文为准**。
+> Xiezhi (獬豸), the beast that discerns right from wrong. 能辨曲直、触不直。本工作流以其把关之能，约束 Go 开发全流程。
 
-## 自动触发（Cursor）
+编写或修改 Go 代码时，**必须**按以下流程执行，禁止跳过或颠倒顺序。
 
-以下规则在 `skills/cursor/rules/` 中均为 **`alwaysApply: true`**，由 Cursor **每次对话自动注入**，无需手动 `@` 引用，即为工作流与门禁的**自动触发**：
-
-- **`xiezhi-workflow.mdc`**（本文）— 总流水线  
-- **`go-code-standards.mdc`** — 编码规范  
-- **`go-audit.mdc`** — 改 `.go` 后跑 `audit.py`  
-- **`test-functionality-review.mdc`** — CR 后测试评审  
-- **`commit-summary.mdc`** — 任务结束提交总结格式  
-- **`module-review-gates.mdc`** — 模块审计 Gate  
-- **`feature-planning-files.mdc`** — 特性文档目录（`docs/features/<name>/`）唯一约定  
-- **`task-design-brief-gate.mdc`** — **阶段 0.5 核心门禁**（与本文同权；防止只读总览却跳过四步）
-
-阶段 **0.5 四步输出模板**为独立 Markdown（减 token）：见 **「阶段 0.5」** 中的路径；**执行义务**以 **`task-design-brief-gate.mdc`** 为准。
-
-## 执行顺序（单线流水线）
+## 执行顺序（流水线）
 
 ```
-0. 功能启动 ──► 0.5 方案简报 ──► 1. 编写 ──► 2. 编码审计 ──► 3. [模块审计] ──► 4. Code Review ──► 5. 测试评审 ──► 6. 提交总结
-                   │
-                   ├─ Step1 数据结构（不可跳过）
-                   ├─ Step2 接口契约（可简化跳过）
-                   ├─ Step3 模块耦合（可简化跳过）
-                   └─ Step4 Task 拆分（可简化跳过）
+0. 需求澄清 ──► 1. 编写 ──► 2. 编码审计 ──► 3. [模块审计] ──► 4. Code Review ──► 5. 测试评审 ──► 6. 提交总结
 ```
 
-## 阶段一览
+> - 阶段 0 对应 **Think Before Coding**（`karpathy-constraints.mdc` 原则 1）。
+> - 阶段 1 贯穿 **Simplicity First**（原则 2）和 **Surgical Changes**（原则 3）。
+> - 阶段 5→6 之间验证 **Goal-Driven Execution**（原则 4）。
 
-| 阶段 | 职责（精华） | 细则与工具 |
-|------|--------------|------------|
-| **0** | PRD + `docs/features/<kebab>/task_plan` | 下节「阶段 0」+ **`feature-planning-files.mdc`** |
-| **0.5** | 四步设计，每步用户确认 | **`task-design-brief-gate.mdc`**（短门禁）+ **`cursor/references/task-design-brief.md`**（模板） |
-| **1** | 编码规范 | `go-code-standards.mdc` |
-| **2** | 编码审计 | `go-audit.mdc` → `audit.py` |
-| **3** | 模块审计（适用时） | `module-review-gates.mdc` |
-| **4** | Code Review | — |
-| **5** | 测试功能 Review | `test-functionality-review.mdc` + SKILL |
-| **6** | 提交总结 | `commit-summary.mdc` |
+## 各阶段职责
 
-**读取 0.5 模板时**：用 Read 打开本机 **`skills` 克隆目录**下的 `cursor/references/task-design-brief.md`（常见路径：`~/project/skills/cursor/references/task-design-brief.md`）。若工作区已包含 `skills` 子模块，可用工作区相对路径。
+| 阶段 | 职责 | 执行内容 | 对应规则 |
+|------|------|---------|----------|
+| 0. 需求澄清 | 显式假设，确认理解 | 把假设说出来，列出歧义，该反驳就反驳，困惑就停 | `karpathy-constraints.mdc` 原则 1 |
+| 1. 编写 | 遵守编码规范 | 遵循 go-code-standards，Simplicity First，Surgical Changes | `go-code-standards.mdc` + `karpathy-constraints.mdc` 原则 2、3 |
+| 2. 编码审计 | 自动检查 | 执行 `audit.py`，不通过则修复 | `go-audit` skill |
+| 3. 模块审计 | 按 Gate 审计 | 模块级任务时按 Gate 0→4 执行 | `karpathy-constraints.mdc` + `module-review-gates.mdc` |
+| 4. Code Review | 代码评审 | 人工或 code-reviewer 子任务 | — |
+| 5. 测试评审 | 测试用例评审 | Code Review 完成后**立即**执行 | `test-functionality-review.mdc` |
+| 6. 提交总结 | 验证成功标准，输出变更总结 | 确认目标达成，按格式输出 | `karpathy-constraints.mdc` 原则 4 + `commit-summary.mdc` |
 
----
+## 阶段 0：需求澄清（强制）
 
-## 阶段 0：功能启动（完整检查，唯一源）
+对应 `karpathy-constraints.mdc` **原则 1：Think Before Coding**。
 
-**触发**：新功能意图（「开发/实现/新增 xxx 功能」等）、或多文件 / 多步骤（>3 步）任务。
+在开始实现之前，必须执行以下步骤：
 
-### 建议命令
+1. **把假设显式说出来**。不确定的地方，明确讲出来请用户确认，不要默默选一个方案跑。
+2. **列出多种解释**。有歧义时不要只选一个，列出可能的理解，让用户选择。
+3. **该反驳就反驳**。如果有更简单的做法，直接提出来。
+4. **困惑就停**。说不清的地方就停下来要 clarification。
 
-```bash
-ls docs/features/*/prd.md 2>/dev/null || echo "no feature prd found"
-# 将 <feature-name> 替换为当前特性 kebab-case：
-ls docs/features/<feature-name>/task_plan.md 2>/dev/null || echo "no task_plan"
-find docs/features/ -name "task_plan.md" 2>/dev/null
-```
+### 自查清单
 
-### 必做
+- [ ] 我是否理解了用户的真实需求（而不是自己猜的那个）？
+- [ ] 是否有多个可能的实现方向？我列出来了吗？
+- [ ] 是否有更简单的方案？我反驳了吗？
+- [ ] 是否有说不清的地方？我停下来问了吗？
 
-1. **PRD**：`docs/features/` 下与当前功能相关的 **`prd.md`** 已存在并载入上下文；**无**则先 `write-a-prd` 或用户明确「跳过 PRD」并**记录原因**。
-2. **规划**：**`docs/features/<feature-name>/task_plan.md`** 存在且当前 Phase 与任务对齐；**无**则创建目录并补齐 `prd.md`、`task_plan.md`、`findings.md`、`progress.md`（task_plan 须含：目标、当前 Phase、验收标准、已知风险）。
-3. **归档**：仅 **`docs/features/<kebab-case-name>/`**，禁止根目录散落 — 见 **`feature-planning-files.mdc`**（全文即唯一约定）。
+### 何时跳过？
 
-### 可跳过 PRD（多步任务仍建议有 task_plan）
-
-纯 bugfix、纯重构/规范修复、仅迁移脚本、仅文档更新。
-
-### 禁止（阶段 0）
-
-- 未创建 **task_plan.md** 就开始多步骤任务  
-- 没有 **PRD** 就开始新业务功能（**单行 bugfix** 除外）  
-- **task_plan** 的 Phase 完成后不标记 complete  
-- 特性文档落在根目录或非 `docs/features/<name>/`  
-
-### 跨会话恢复
-
-优先读取 **最近修改** 的 `docs/features/<name>/`（通过 `task_plan.md` 查找）。
-
-**未完成阶段 0 → 禁止进入阶段 0.5 / 编码。**
-
----
-
-## 阶段 0.5：方案简报（四步设计）— **核心中的核心**
-
-> **硬门禁**：触发条件见 **`task-design-brief-gate.mdc`**（与本文 **完全同步**，该文件 `alwaysApply` 以便每条对话可见）。  
-> **禁止** 在触发场景下 **未** 完成 Step 1 起的设计确认就修改 `internal/**`、`cmd/**` 内 handler/service/repository/dto/业务 model 等 **实现或契约** 代码。**禁止**「先写代码再补方案」。  
-> **有效豁免** 仅见 `task-design-brief-gate.mdc`；豁免须同轮输出 **`阶段 0.5 豁免：<理由>`**，且不得与真实改动（新 API/表/跨模块）矛盾。
-
-**模板**：**必须 Read** **`cursor/references/task-design-brief.md`**，按文件内结构输出，**禁止**凭记忆代替该文件。
-
-**流程**：每步输出后 **等待用户确认** 再下一步；**Step1（数据结构）不可跳过**。
-
-| Step | 内容 | 跳过条件 |
-|------|------|----------|
-| 1 | 表 / Model / DTO / 数据流 | **不可** |
-| 2 | 接口契约 | 无新接口时注明 |
-| 3 | 模块耦合 | 无跨模块时注明 |
-| 4 | Task 拆分 | 单 Task 时注明 |
-
-**禁止**：Step1 未确认就输出 Step2；未确认即进入阶段手写业务代码。
-
----
+琐碎任务（修错别字、单行改动、变量改名）不需要走完整流程，用判断。
 
 ## 阶段 1：编写
 
-- 遵守 **`go-code-standards.mdc`**。  
-- 禁止：无 Go doc、不处理错误、单函数 >50 行、阻塞不传 `context`、关键写成功无 `Info` 日志（豁免见 `go-audit`）。
-
----
+- 编写前遵守 `go-code-standards.mdc` 全部规范
+- 编写时遵循 **Simplicity First**（`karpathy-constraints.mdc` 原则 2）：不做超出需求的功能，200 行能改成 50 行就重写
+- 编写时遵循 **Surgical Changes**（`karpathy-constraints.mdc` 原则 3）：每一行改动都要能追溯到用户的需求，不要「改进」不在任务里的邻近代码
+- 禁止：无注释公开函数、未处理错误、超 50 行函数、阻塞操作不传 context
 
 ## 阶段 2：编码审计（强制）
 
-`python3 ~/.cursor/skills/go-audit/scripts/audit.py <本次修改的.go文件>` — 失败则修复至退出码 0。禁止跳过或空声称通过。
-
----
+- 命令：`python3 ~/.cursor/skills/go-audit/scripts/audit.py <本次修改的.go文件>`
+- 审计不通过 → **先修复**，再重跑，直到通过
+- 禁止：跳过审计、手动声称通过、用其他方式替代
 
 ## 阶段 3：模块审计（适用时）
 
-按 **`module-review-gates.mdc`** Gate 0→4，前一 Gate 不过不得进入下一 Gate。
+- 对模块做审计/重构时，按 `module-review-gates.mdc` 执行 Gate 0→4
+- 前一 Gate 未通过不得进入下一 Gate
+- 阶段 3 全程贯穿 **Surgical Changes**（`karpathy-constraints.mdc` 原则 3）
 
----
+## 阶段 4→5：Code Review 后测试评审（强制）
 
-## 阶段 4 → 5：Code Review 与测试评审
-
-CR 完成后**立即**按 **`test-functionality-review`** SKILL 全流程执行；本轮须含**用例表**（含「用例ID | 场景 | 前置条件 | 输入/步骤 | 预期结果」）与 **「评审结论」**。  
-禁止以「仅 repository」为由跳过。**任意 Go 生产代码改动须做阶段 5。**
-
----
-
-## 阶段 5 → 6 门禁
-
-无上述用例表 +「评审结论」→ **禁止**输出符合 **`commit-summary.mdc`** 的交付总结。
-
----
+- Code Review 完成后，**必须立即**执行测试功能 Review
+- 禁止：等待用户说「测试功能 review」再执行
+- 禁止：询问「是否进行测试功能 review？」
 
 ## 阶段 6：提交总结（强制）
 
-按 **`commit-summary.mdc`**。禁止催促提交用语。
+执行 `karpathy-constraints.mdc` **原则 4：Goal-Driven Execution** 的验证步骤：
 
----
-
-## 任务收尾确认清单（强制输出）
-
-```
-## 任务收尾检查 ✅
-- [x/□] 阶段 0：PRD/规划路径已满足（不适用填 N/A）
-- [x/□] 阶段 0.5：四步设计已完成并获确认（不适用填 N/A）
-- [x/□] 阶段 2：audit.py 已执行，结果 ___
-- [x/□] 阶段 4：Code Review 已完成
-- [x/□] 阶段 5：测试评审（全结构）已完成
-- [x/□] 阶段 6：提交总结已输出
-- [x/□] task_plan.md 当前 Phase 已标记 complete（如有）
-- [x/□] docs/api-index.md 已更新（如有新增/修改接口）
-```
-
----
+1. 回顾最初的目标：本次任务完成了什么？是否达成？
+2. 确认每一行 diff 都能追溯到需求（对应 Surgical Changes 检查）
+3. 按 `commit-summary.mdc` 格式输出变更总结
+4. 禁止：总结中包含催促提交用语（如「请审计后提交」）
 
 ## 规则优先级
 
-1. **`xiezhi-workflow.mdc`** 与 **`task-design-brief-gate.mdc`**（阶段 0.5 **同权**，后者保证每条对话可见 0.5 义务）  
-2. 其余 **`alwaysApply`** 规范文件（`go-code-standards`、`go-audit` 等）  
-3. 用户临时指令：**不得**在 **已触发 0.5** 的场景下跳过四步或虚构豁免；**不得**绕过阶段 **2、5、6**
+1. 本工作流（执行顺序不可违反）
+2. 各阶段对应规则（`karpathy-constraints.mdc` 优先级最高）
+3. 用户临时指令

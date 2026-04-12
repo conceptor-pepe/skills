@@ -1,0 +1,44 @@
+---
+name: specClawd Spec Workflow
+description: Gate-driven workflow based on change and spec artifacts
+alwaysApply: true
+---
+
+# specClawd Spec Workflow
+
+## Core Rules
+
+- long-term truth lives in `specs/`
+- current work lives in `changes/`
+- high-risk changes require a change folder before implementation
+- delivery is incomplete without verify, test review, commit summary, and archive
+- **all non-trivial work must follow xiezhi workflow** (`xiezhi-workflow.mdc`)，包括其中的 **Karpathy 行为约束**（`karpathy-constraints.mdc` 4 条原则：Think Before Coding、Simplicity First、Surgical Changes、Goal-Driven Execution）
+
+## Required Change Artifacts
+
+- `change.md`
+- `spec-delta.md`
+- `design.md`
+- `tasks.md`
+- `review.md`
+- `audit.md`
+- `test-review.md`
+- `commit-summary.md`
+- `archive.md`
+- `error-memory.md`
+
+## Format Discipline
+
+- artifact templates should follow the repository's established workflow formats
+- `design.md` should prefer the phase 0.5 `Step 1 -> Step 4` structure
+- `commit-summary.md` should follow the repository commit summary rule format
+- `test-review.md` should follow the repository test review structure instead of a generic summary
+- `error-memory.md` should record reusable lessons and the gate updates derived from this change
+
+## Required Command Semantics
+
+- `specClawd:new-change`
+- `specClawd:spec-brief`
+- `specClawd:verify`
+- `specClawd:commit-summary`
+- `specClawd:archive`

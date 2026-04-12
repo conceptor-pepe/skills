@@ -1,38 +1,20 @@
 ---
-description: Code Review 完成后必须自动执行测试功能 Review。本步骤是提交总结（commit-summary）的硬性前置条件，未执行则禁止输出提交总结。
+description: Code Review 完成后必须自动执行测试功能 Review
+globs: 
 alwaysApply: true
 ---
 
 # 测试功能 Review（Code Review 后强制自动执行）
 
-> **在流水线中的位置**：**阶段 5**；顺序见 **`xiezhi-workflow.mdc`**。
-
 **Code Review 完成后，必须自动执行**测试功能 Review，无需用户再次请求。
-
-## ⚠️ 门禁地位
-
-**本步骤是 `commit-summary.mdc` 的硬性前置条件（Gate G-2）。**
-- 未执行本步骤 → 禁止输出提交总结
-- `commit-summary.mdc` 会检查当前会话中是否存在测试用例表和评审结论
-- 任何包含 Go 代码修改的任务都必须执行，**无例外**
 
 ## 执行时机
 
 - code-reviewer 子任务返回后 → 立即执行
 - 完成对代码的评审并输出结论后 → 立即执行
 - 用户请求「代码 review」且评审已结束 → 立即执行
-- **准备输出提交总结时**，发现本步骤未执行 → 立即补执行
-
-## 执行方式
-
-读取 `test-functionality-review` SKILL 文件（`~/.cursor/skills/test-functionality-review/SKILL.md`），按三步流程执行：
-1. **测试用例设计**：输出用例表（必须含「用例ID | 场景 | 前置条件 | 步骤 | 预期结果」列）
-2. **按用例评审代码**：逐条对照检查
-3. **输出结论**：包含「需修复」「已修复」「可选优化」「OK」分类
 
 ## 禁止
 
 - **禁止**等待用户说「测试功能 review」再执行
 - **禁止**询问「是否进行测试功能 review？」
-- **禁止**以「无业务逻辑」「仅数据层」「仅 Repository」为由跳过
-- **禁止**在未实际执行的情况下在收尾清单中标注「测试评审已完成」

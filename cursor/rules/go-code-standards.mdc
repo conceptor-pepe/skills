@@ -7,7 +7,6 @@ alwaysApply: true
 
 # Go 代码编写规范（强制）
 
-> **在流水线中的位置**：**阶段 1**，见 **`xiezhi-workflow.mdc`**。  
 > **强制执行**：编写或修改任何 Go 代码（函数、文件）前，必须先遵守本规范。每次输出代码后，必须对照下方检查清单自查。禁止违反或跳过。
 
 ## 强制检查流程
@@ -17,9 +16,6 @@ alwaysApply: true
 2. 函数是否超过 50 行？嵌套是否超过 2 层？
 3. 是否正确处理所有错误？是否有未注释的 `_` 忽略？
 4. 资源是否用 defer 释放？阻塞函数是否传入 context？
-5. DTO 中 int64 字段 json tag 是否含 `,string`？[]int64 是否已替换为 []types.StringID？
-6. handler 层所有异常分支是否都有日志输出？
-7. service/handler 关键写操作是否在成功出口记录 Info 日志？
 
 ---
 
@@ -32,6 +28,8 @@ alwaysApply: true
 - **单一职责原则**：每个函数只做一件事，并做好
   - 函数应该简短、专注、易于理解
   - 如果一个函数做了多件事，应该拆分为多个函数
+
+> **本规则的根源**：Karpathy 原则 **Simplicity First**（`karpathy-constraints.mdc` 原则 2）指出——LLM 非常喜欢把代码写复杂，100 行能搞定的事写成 1000 行。每次写函数时，先问自己：这个函数是否超出了需求本身？
 
 ## 命名规范
 - **自解释性命名**：使用简洁、清晰的名称（1-3 个单词）
@@ -123,21 +121,10 @@ alwaysApply: true
 ## 错误处理规范
 - **统一错误处理**：
   - 使用项目统一的错误类型（如 `pkg/errors`）
-  - 错误信息应该清晰、可操作
+  - 错误信息应���清晰、可操作
   - 不要忽略错误，使用 `_` 忽略时必须注释原因
   - 错误包装时使用 `fmt.Errorf("context: %w", err)` 保留错误链
   - 示例：`return fmt.Errorf("查询用户失败: %w", err)` 而不是 `return err`
-
-- **Service / Handler 层错误分支日志（强制）**：
-  - **service 层**和 **handler 层**所有 `if err != nil` 分支**必须**有日志输出，无一例外
-  - 禁止在 service 层和 handler 层使用 `audit:allow-no-log` 豁免
-  - handler 层日志规则：
-    - 参数绑定/校验失败用 `Warn`（含 raw 输入上下文）
-    - service 调用失败用 `Error`（含 user_id / resource_id 等关键字段）
-    - `HandleError` 调用前**必须**先写 `h.Logger.Error/Warn`，确保双保险
-  - service 层日志规则同上
-  - 日志必须包含足够上下文（user_id、account、操作名等），确保出问题时可追溯
-  - `audit:allow-no-log` **仅限** repository 层使用（错误向上传播，由 service/handler 层记录）
 
 ## 资源管理规范
 - **及时释放资源**：
@@ -150,7 +137,7 @@ alwaysApply: true
 ## Context 使用规范
 - **传递上下文**：
   - 所有可能阻塞的函数都应该接受 `context.Context` 作为第一个参数
-  - 使用 `context.WithTimeout` 设置超时，避免无限等待
+  - 使用 `context.WithTimeout` 或 `context.WithCancel` 管理超时，避免无限等待
   - 不要将 context 存储在结构体中，应该作为参数传递
   - 示例：`func (s *Service) GetUser(ctx context.Context, id int64) (*User, error)`
 
@@ -202,11 +189,6 @@ alwaysApply: true
   - 使用结构化日志（如 zap），而不是格式化字符串
   - 日志级别要合理：Debug（调试）、Info（信息）、Warn（警告）、Error（错误）
   - 错误日志必须包含足够的上下文信息（请求ID、用户ID等）
-  - **service 层**和 **handler 层**所有错误分支必须记录日志，禁止静默返回（详见"错误处理规范"）
-  - **service 层**和 **handler 层**关键写操作（新增/修改/删除/状态变更/权限变更/积分变更）在成功返回前必须记录 `Info` 日志
-  - 成功日志必须包含最小追踪字段：`op`、`operator_id`（如有）、`target_id`（或 `user_id/team_id`）、`result=success`
-  - 纯查询读接口（Get/List/Query）默认不强制成功日志，避免日志噪音
-  - 仅 repository 层的错误可使用 `audit:allow-no-log` 豁免（错误由上层记录）
   - 避免在生产环境输出敏感信息（密码、token等）
   - 示例：`logger.Info("用户登录成功", zap.Int64("user_id", userID))`
 
@@ -216,30 +198,6 @@ alwaysApply: true
   - 优先使用局部变量，避免不必要的包级变量
   - 使用 `:=` 进行短变量声明，而不是 `var`
   - 示例：`if err := doSomething(); err != nil { ... }` 而不是先声明再赋值
-
-## DTO int64 精度保护规范（强制）
-- **前端 int64 精度丢失防护**：
-  - JavaScript Number 最大安全整数为 2^53，雪花 ID 等 int64 值会丢失精度
-  - **单个 int64 字段**：json tag 必须包含 `,string`（如 `json:"id,string"`）
-  - **int64 切片字段**：禁止使用 `[]int64`，改用 `[]types.StringID`（来自 `pkg/types`）
-  - **`*int64` 指针字段**：json tag 同样必须包含 `,string`
-  - **排除**：`json:"-"` 或无 json tag 的字段不受此规则约束
-  - 示例：
-    ```go
-    // ✅ 正确
-    type Response struct {
-        ID        int64            `json:"id,string"`
-        UserID    *int64           `json:"user_id,string,omitempty"`
-        ModuleIDs []types.StringID `json:"module_ids"`
-    }
-    
-    // ❌ 错误：缺少 ,string / 使用裸 []int64
-    type Response struct {
-        ID        int64   `json:"id"`           // 精度丢失！
-        ModuleIDs []int64 `json:"module_ids"`   // 精度丢失！
-    }
-    ```
-  - 审计脚本会自动检查此规则
 
 ## 性能优化规范
 - **避免不必要的分配**：
@@ -262,9 +220,6 @@ alwaysApply: true
 - [ ] 代码易于阅读和理解，没有过度复杂的语法
 - [ ] if 语句嵌套深度不超过 2 层，使用早期返回模式减少嵌套
 - [ ] 所有错误都被正确处理，没有忽略错误
-- [ ] service 层和 handler 层所有错误分支均有日志输出（禁止 audit:allow-no-log）
-- [ ] service 层和 handler 层关键写操作在成功出口有 Info 日志（允许 `audit:allow-no-success-log` 仅用于明确高频/幂等豁免）
-- [ ] DTO 中 int64 字段的 json tag 包含 `,string`；[]int64 已替换为 []types.StringID
 - [ ] 资源（文件、连接、锁）都使用 defer 正确释放
 - [ ] 并发访问的资源都有适当的保护（锁或 channel）
 - [ ] 函数长度不超过 50 行，复杂函数已拆分
@@ -272,3 +227,4 @@ alwaysApply: true
 - [ ] 日志包含足够的上下文信息
 - [ ] 接口设计遵循最小化原则
 - [ ] 变量作用域最小化，优先使用局部变量
+- [ ] **每一行改动都能追溯到用户的需求**（`karpathy-constraints.mdc` 原则 3：Surgical Changes）
