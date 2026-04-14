@@ -5,8 +5,6 @@ alwaysApply: true
 
 # 特性文档归档规范（强制）
 
-与 **獬豸工作流**阶段 0（功能启动）中的文档路径约定一致；端到端顺序见 **`xiezhi-workflow.mdc`**。
-
 ## 规则
 
 每个特性的所有文档（PRD、计划、调研、进度等）**必须**放在 `docs/features/<feature-name>/` 下，**禁止**散落在项目根目录或其他位置。
@@ -34,8 +32,25 @@ docs/features/<feature-name>/
 3. 规划文件（task_plan / findings / progress）同样放在该目录
 4. 后续该特性相关的设计文档、迁移说明等也放在同一目录
 
+## task_plan.md 阶段 0 门禁签署（强制）
+
+每个 `task_plan.md` **顶部**必须包含 Gate 0-Start 签署行，作为进入阶段 0.5 / 编码的前置条件：
+
+```markdown
+> **阶段 0 门禁**：✅ G0-1 PRD ✅ | ✅ G0-2 四件套 ✅ | ✅ G0-3 当前Phase ✅ | ✅ G0-4 progress初始化 ✅
+> **Gate 0-Start 签署人**：[姓名] **签署日期**：[YYYY-MM-DD]
+```
+
+- **G0-1**：`prd.md` 已存在
+- **G0-2**：`findings.md` + `progress.md` 与 `prd.md`、`task_plan.md` 同目录
+- **G0-3**：`task_plan.md` 含「当前 Phase」行（不能为空或写"待开始"）
+- **G0-4**：`progress.md` 已记录阶段 0 完成状态
+
+每进入一个新 Phase 的编码前，须在 `task_plan.md` 顶部**更新签署行**（新签署日期），代表上一个 Phase 结束、新 Phase 启动。
+
 ## 禁止
 
 - **禁止** `task_plan.md`、`findings.md`、`progress.md` 出现在项目根目录
 - **禁止** 特性文档散落在不同目录
 - **禁止** 不同特性的文档混在同一个目录
+- **禁止** `task_plan.md` 顶部无 Gate 0-Start 签署行就进入编码阶段
